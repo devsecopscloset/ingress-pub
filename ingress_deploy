@@ -1,0 +1,17 @@
+helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
+
+helm upgrade ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --set controller.metrics.enabled=true --set-string controller.podAnnotations."prometheus\.io scrape"="true" --set-string controller.podAnnotations."prometheus\.io/port"="10254"
+
+kubectl apply --kustomize github.com/kubernetes/ingress-nginx/deploy/prometheus/
+
+kubectl apply --kustomize github.com/kubernetes/ingress-nginx/deploy/grafana/
+
+kubectl patch service/grafana -n ingress-nginx --patch '{"spec": {"type": "ClusterIP"}}'
+
+kubectl patch service/prometheus-server -n ingress-nginx --patch '{"spec": {"type": "ClusterIP"}}'
+
+helm upgrade ingress-nginx ingress-nginx/ingress-nginx \
+--namespace ingress-nginx \
+--set controller.metrics.enabled=true \
+--set controller.metrics.serviceMonitor.enabled=true \
+--set controller.metrics.serviceMonitor.additionalLabels.release="prometheus"
